@@ -1,4 +1,4 @@
-
+// Game state variables
 let currentOperation = "";
 let currentAnswer = 0;
 let score = 0;
@@ -7,6 +7,7 @@ let history = [];
 let cycleIndex = 0;
 const operationOrder = ["+", "+", "+", "-", "-", "-", "*", "*", "*", "/", "/"];
 
+// Initialize or reset the game
 function resetGame() {
   score = 0;
   history = [];
@@ -17,6 +18,7 @@ function resetGame() {
   generateOperation();
 }
 
+// Generate random number based on level
 function generateNumber(level) {
   let min = 1, max = 9;
   if (level === 2) max = 30;
@@ -25,85 +27,124 @@ function generateNumber(level) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Generate a new math operation
 function generateOperation() {
-  let op;
-  do {
-    op = operationOrder[cycleIndex % operationOrder.length];
-    cycleIndex++;
-  } while (cycleIndex > 1 && history.slice(-2).includes(op));
-
-  let num1, num2, displayOp, result;
+  let op, num1, num2, displayOp, result;
   let valid = false;
-  while (!valid) {
-    num1 = generateNumber(level);
-    num2 = generateNumber(level);
+  let attempts = 0;
+  const maxAttempts = 100;
 
-    if (op === "+") {
-      result = num1 + num2;
-    } else if (op === "-") {
-      if (num1 < num2) [num1, num2] = [num2, num1];
-      result = num1 - num2;
-    } else if (op === "*") {
-      if (num1 === 1 || num2 === 1 || num1 === 11 || num2 === 11) continue;
-      result = num1 * num2;
-    } else if (op === "/") {
-      if (num2 === 1 || num2 === 0 || num1 % num2 === 0) continue;
-      result = num1 / num2;
-      if (level < 3) continue;
-      result = parseFloat(result.toFixed(2));
-    }
+  // Try to generate a valid operation
+  while (!valid && attempts < maxAttempts) {
+      attempts++;
+      op = operationOrder[cycleIndex % operationOrder.length];
+      cycleIndex++;
 
-    displayOp = `${num1} ${op} ${num2}`;
-    if (!history.includes(displayOp)) {
-      valid = true;
-    }
+      num1 = generateNumber(level);
+      num2 = generateNumber(level);
+
+      // Calculate result based on operation type
+      if (op === "+") {
+          result = num1 + num2;
+          valid = true;
+      } else if (op === "-") {
+          // Ensure positive results
+          if (num1 < num2) [num1, num2] = [num2, num1];
+          result = num1 - num2;
+          valid = true;
+      } else if (op === "*") {
+          // Skip trivial multiplications
+          if (num1 !== 1 && num2 !== 1 && num1 !== 11 && num2 !== 11) {
+              result = num1 * num2;
+              valid = true;
+          }
+      } else if (op === "/") {
+          // Skip exact divisions and division by zero
+          if (num2 !== 0 && num1 % num2 !== 0) {
+              result = parseFloat((num1 / num2).toFixed(2));
+              valid = true;
+          }
+      }
+
+      // Check if operation is unique in recent history
+      if (valid) {
+          displayOp = `${num1} ${op} ${num2}`;
+          if (history.includes(displayOp)) {
+              valid = false;
+          }
+      }
   }
 
+  // Fallback if no valid operation found
+  if (!valid) {
+      console.error("Failed to generate valid operation after", maxAttempts, "attempts");
+      // Generate a simple addition as fallback
+      num1 = generateNumber(1);
+      num2 = generateNumber(1);
+      displayOp = `${num1} + ${num2}`;
+      result = num1 + num2;
+  }
+
+  // Update game state
   currentOperation = displayOp;
   currentAnswer = result;
   history.push(displayOp);
-  if (history.length > 30) history.shift();
+  
+  // Limit history size
+  if (history.length > 30) {
+      history.shift();
+  }
 
+  // Update UI
   document.getElementById("operation").innerText = displayOp;
   document.getElementById("answer").value = "";
+  document.getElementById("answer").focus();
 }
 
+// Check user's answer
 function checkAnswer() {
-  const userAnswer = document.getElementById("answer").value.trim();
+  const userAnswer = parseFloat(document.getElementById("answer").value.trim());
   const feedback = document.getElementById("feedback");
 
-  if (parseFloat(userAnswer) === parseFloat(currentAnswer)) {
-    score++;
-    feedback.innerText = "✅ ¡Correcto!";
-    feedback.style.color = "lightgreen";
-    setTimeout(() => {
-      feedback.innerText = "";
-    }, 1000);
+  if (!isNaN(userAnswer) {
+      if (Math.abs(userAnswer - currentAnswer) < 0.01) { // Account for floating point precision
+          score++;
+          feedback.innerText = "✅ ¡Correcto!";
+          feedback.style.color = "lightgreen";
+      } else {
+          feedback.innerText = `❌ Incorrecto. Era ${currentAnswer}`;
+          feedback.style.color = "red";
+      }
   } else {
-    feedback.innerText = `❌ Incorrecto. Era ${currentAnswer}`;
-    feedback.style.color = "red";
-    setTimeout(() => {
-      feedback.innerText = "";
-    }, 2000);
+      feedback.innerText = "⚠️ Ingresa un número válido";
+      feedback.style.color = "yellow";
+      return;
   }
 
+  // Update score
   document.getElementById("score").innerText = "Puntos: " + score;
 
+  // Show completion message after 30 questions
   if (history.length >= 30) {
-    setTimeout(() => {
-      alert("¡Has completado 30 operaciones! ¿Quieres subir de nivel o seguir?");
-      history = [];
-    }, 200);
+      feedback.innerText += " ¡30 operaciones completadas!";
   }
 
-  generateOperation();
+  // Generate new question after delay
+  setTimeout(() => {
+      feedback.innerText = "";
+      generateOperation();
+  }, (history.length >= 30) ? 3000 : 1500);
 }
 
+// Handle keyboard input
 function handleKey(event) {
   if (event.key === "Enter") {
-    checkAnswer();
+      checkAnswer();
   }
 }
 
-// Iniciar
-window.onload = resetGame;
+// Start the game when page loads
+window.onload = function() {
+  resetGame();
+  document.getElementById("answer").focus();
+};
