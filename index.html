@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Entrenador Mental</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Entrenador Mental</h1>
+    <div id="level-container">
+      Nivel:
+      <select id="level" onchange="resetGame()">
+        <option value="1">1 (1 dígito)</option>
+        <option value="2">2 (3 cifras en total)</option>
+        <option value="3">3 (divisiones con decimales)</option>
+        <option value="4">4 (4 cifras en total)</option>
+      </select>
+    </div>
+    <div id="operation"></div>
+    <input type="text" id="answer" placeholder="Tu respuesta" onkeydown="handleKey(event)" />
+    <button onclick="checkAnswer()">Comprobar</button>
+    <div id="feedback"></div>
+    <div id="score">Puntos: 0</div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
