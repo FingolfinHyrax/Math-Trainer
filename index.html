@@ -1,30 +1,91 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Entrenador Mental</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1e1e1e" />
+  <title>Entrenador Mental - Mejora tus habilidades matemáticas</title>
+  <meta name="description" content="Entrenador mental matemático con diferentes niveles de dificultad">
   <link rel="stylesheet" href="style.css" />
+  <!-- iOS PWA meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Entrenador Mental">
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.webmanifest">
 </head>
 <body>
   <div class="container">
-    <h1>Entrenador Mental</h1>
-    <div id="level-container">
-      Nivel:
-      <select id="level" onchange="resetGame()">
-        <option value="1">1 (1 dígito)</option>
-        <option value="2">2 (3 cifras en total)</option>
-        <option value="3">3 (divisiones con decimales)</option>
-        <option value="4">4 (4 cifras en total)</option>
-      </select>
+    <header>
+      <h1>Entrenador Mental</h1>
+      <p class="subtitle">Mejora tus habilidades matemáticas</p>
+    </header>
+    
+    <div class="settings-panel">
+      <div id="level-container" class="setting">
+        <label for="level">Nivel de dificultad:</label>
+        <select id="level" onchange="resetGame()" aria-label="Seleccionar nivel de dificultad">
+          <option value="1">1 (Operaciones básicas)</option>
+          <option value="2">2 (Números de 2-3 cifras)</option>
+          <option value="3">3 (Decimales y divisiones)</option>
+          <option value="4">4 (Operaciones avanzadas)</option>
+        </select>
+      </div>
+      
+      <div class="setting">
+        <button id="help-btn" aria-label="Mostrar ayuda">?</button>
+      </div>
     </div>
-    <div id="operation"></div>
-    <input type="text" id="answer" placeholder="Tu respuesta" onkeydown="handleKey(event)" />
-    <button onclick="checkAnswer()">Comprobar</button>
-    <div id="feedback"></div>
-    <div id="score">Puntos: 0</div>
+    
+    <div id="operation" class="operation-display" aria-live="polite"></div>
+    
+    <div class="input-group">
+      <input type="number" 
+             id="answer" 
+             placeholder="Escribe tu respuesta" 
+             onkeydown="handleKey(event)" 
+             inputmode="decimal"
+             aria-label="Respuesta"
+             autocomplete="off">
+      <button id="check-btn" onclick="checkAnswer()">Comprobar</button>
+    </div>
+    
+    <div id="feedback" class="feedback" aria-live="assertive"></div>
+    
+    <div class="stats">
+      <div id="score">Puntos: 0</div>
+      <div id="streak">Racha: 0</div>
+      <div id="timer">Tiempo: 0s</div>
+    </div>
+    
+    <button id="reset-btn" onclick="resetGame()">Reiniciar</button>
   </div>
+  
+  <!-- Help Modal -->
+  <div id="help-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Instrucciones</h2>
+      <ul>
+        <li>Selecciona un nivel de dificultad</li>
+        <li>Resuelve la operación matemática mostrada</li>
+        <li>Escribe tu respuesta y presiona Comprobar o Enter</li>
+        <li>¡Gana puntos por cada respuesta correcta!</li>
+      </ul>
+      <h3>Niveles:</h3>
+      <ol>
+        <li><strong>Básico:</strong> Sumas y restas con 1 dígito</li>
+        <li><strong>Intermedio:</strong> Operaciones con números de 2-3 cifras</li>
+        <li><strong>Avanzado:</strong> Divisiones con decimales</li>
+        <li><strong>Experto:</strong> Operaciones complejas con 4 cifras</li>
+      </ol>
+    </div>
+  </div>
+  
   <script src="script.js"></script>
 </body>
 </html>
