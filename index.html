@@ -1,191 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Entrenador Mental</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 500px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .hidden {
-      display: none;
-    }
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 5px;
-      max-width: 80%;
-    }
-    .close {
-      float: right;
-      cursor: pointer;
-      font-size: 1.5em;
-    }
-    #operation {
-      font-size: 2em;
-      margin: 20px 0;
-      text-align: center;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <h1>Entrenador Mental</h1>
-    
-    <div>
-      <label for="level">Nivel:</label>
-      <select id="level" onchange="resetGame()">
-        <option value="1">1 (Básico)</option>
-        <option value="2">2 (Intermedio)</option>
-        <option value="3">3 (Avanzado)</option>
-      </select>
-      <button id="help-btn">?</button>
-    </div>
-    
-    <div id="operation"></div>
-    
-    <div>
-      <input type="number" id="answer" placeholder="Tu respuesta">
-      <button onclick="checkAnswer()">Comprobar</button>
-    </div>
-    
+    <label for="level">Nivel:</label>
+    <select id="level">
+      <option value="1">1 (1 dígito)</option>
+      <option value="2">2 (hasta 3 cifras)</option>
+      <option value="3">3 (con decimales)</option>
+      <option value="4">4 (hasta 4 cifras)</option>
+    </select>
+    <div class="operation" id="operation"></div>
+    <input type="text" id="answer" placeholder="Escribe tu respuesta" />
+    <button onclick="checkAnswer()">Comprobar</button>
     <div id="feedback"></div>
-    <div id="score">Puntos: 0</div>
+    <div class="score">Puntos: <span id="score">0</span></div>
   </div>
-
-  <!-- Modal -->
-  <div id="help-modal" class="modal hidden">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h2>Instrucciones</h2>
-      <p>Resuelve las operaciones matemáticas que aparecen.</p>
-      <p>Niveles:</p>
-      <ul>
-        <li>1: Operaciones básicas</li>
-        <li>2: Operaciones intermedias</li>
-        <li>3: Operaciones avanzadas</li>
-      </ul>
-    </div>
-  </div>
-
-  <script>
-    // Game variables
-    let currentOperation = "";
-    let currentAnswer = 0;
-    let score = 0;
-    let level = 1;
-
-    // DOM elements
-    const operationEl = document.getElementById('operation');
-    const answerEl = document.getElementById('answer');
-    const feedbackEl = document.getElementById('feedback');
-    const scoreEl = document.getElementById('score');
-    const helpBtn = document.getElementById('help-btn');
-    const helpModal = document.getElementById('help-modal');
-    const closeBtn = document.querySelector('.close');
-
-    // Initialize game
-    function initGame() {
-      // Set up event listeners
-      answerEl.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') checkAnswer();
-      });
-      
-      helpBtn.addEventListener('click', function() {
-        helpModal.classList.remove('hidden');
-      });
-      
-      closeBtn.addEventListener('click', function() {
-        helpModal.classList.add('hidden');
-      });
-      
-      // Start first game
-      resetGame();
-    }
-
-    // Reset game state
-    function resetGame() {
-      level = parseInt(document.getElementById('level').value);
-      score = 0;
-      scoreEl.textContent = `Puntos: ${score}`;
-      feedbackEl.textContent = '';
-      generateOperation();
-    }
-
-    // Generate new math operation
-    function generateOperation() {
-      let num1, num2, op;
-      
-      if (level === 1) {
-        num1 = Math.floor(Math.random() * 9) + 1;
-        num2 = Math.floor(Math.random() * 9) + 1;
-        op = ['+', '-'][Math.floor(Math.random() * 2)];
-      } else if (level === 2) {
-        num1 = Math.floor(Math.random() * 50) + 10;
-        num2 = Math.floor(Math.random() * 50) + 10;
-        op = ['+', '-', '*'][Math.floor(Math.random() * 3)];
-      } else {
-        num1 = Math.floor(Math.random() * 100) + 1;
-        num2 = Math.floor(Math.random() * 100) + 1;
-        op = ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
-      }
-      
-      // Calculate answer
-      if (op === '+') currentAnswer = num1 + num2;
-      else if (op === '-') currentAnswer = num1 - num2;
-      else if (op === '*') currentAnswer = num1 * num2;
-      else if (op === '/') currentAnswer = parseFloat((num1 / num2).toFixed(2));
-      
-      // Display operation
-      currentOperation = `${num1} ${op} ${num2}`;
-      operationEl.textContent = currentOperation;
-      answerEl.value = '';
-      answerEl.focus();
-    }
-
-    // Check user's answer
-    function checkAnswer() {
-      const userAnswer = parseFloat(answerEl.value);
-      
-      if (isNaN(userAnswer)) {
-        feedbackEl.textContent = 'Por favor ingresa un número';
-        return;
-      }
-      
-      if (Math.abs(userAnswer - currentAnswer) < 0.01) {
-        score++;
-        scoreEl.textContent = `Puntos: ${score}`;
-        feedbackEl.textContent = '¡Correcto!';
-        setTimeout(() => {
-          feedbackEl.textContent = '';
-          generateOperation();
-        }, 1000);
-      } else {
-        feedbackEl.textContent = `Incorrecto. La respuesta era ${currentAnswer}`;
-        setTimeout(() => {
-          feedbackEl.textContent = '';
-          generateOperation();
-        }, 2000);
-      }
-    }
-
-    // Start the game when page loads
-    window.onload = initGame;
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
+
