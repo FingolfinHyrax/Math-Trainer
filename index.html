@@ -1,29 +1,28 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Entrenador Mental</title>
-  <link rel="stylesheet" href="style.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenador Mental</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Entrenador Mental</h1>
-    <label for="level">Nivel:</label>
-    <select id="level" onchange="resetGame()">
-      <option value="1">1 (1 dígito)</option>
-      <option value="2">2 (hasta 3 cifras)</option>
-      <option value="3">3 (con decimales)</option>
-      <option value="4">4 (hasta 4 cifras)</option>
-    </select>
-    <div class="operation" id="operation"></div>
-    <input type="text" id="answer" placeholder="Escribe tu respuesta" />
-    <button onclick="checkAnswer()">Comprobar</button>
-    <div id="feedback"></div>
-    <div class="score">Puntos: <span id="score">0</span></div>
-  </div>
-  <script src="script.js"></script>
+    <div class="container">
+        <h1>Entrenador Mental</h1>
+        <label for="level">Nivel:</label>
+        <select id="level" onchange="resetGame()">
+            <option value="1">1 (1 dígito)</option>
+            <option value="2">2 (2 cifras)</option>
+            <option value="3">3 (divisiones con decimales)</option>
+            <option value="4">4 (hasta 4 cifras)</option>
+        </select>
+        <div id="operation"></div>
+        <input type="text" id="answer" autocomplete="off">
+        <button onclick="checkAnswer()">Comprobar</button>
+        <p id="feedback"></p>
+        <p>Puntos: <span id="score">0</span></p>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
-
-
