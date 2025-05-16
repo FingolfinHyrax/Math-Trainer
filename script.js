@@ -1,150 +1,146 @@
-// Game state variables
-let currentOperation = "";
-let currentAnswer = 0;
 let score = 0;
-let level = 1;
+let currentOperation = "";
+let correctAnswer = 0;
+let operationCount = 0;
 let history = [];
-let cycleIndex = 0;
-const operationOrder = ["+", "+", "+", "-", "-", "-", "*", "*", "*", "/", "/"];
+let operationQueue = [];
+const maxHistory = 30;
 
-// Initialize or reset the game
-function resetGame() {
-  score = 0;
-  history = [];
-  cycleIndex = 0;
-  document.getElementById("score").innerText = "Puntos: 0";
-  document.getElementById("feedback").innerText = "";
-  level = parseInt(document.getElementById("level").value);
-  generateOperation();
+const operatorsPerCycle = [
+  ...Array(3).fill('+'),
+  ...Array(3).fill('-'),
+  ...Array(3).fill('*'),
+  ...Array(2).fill('/')
+];
+
+document.getElementById("answer").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") checkAnswer();
+});
+
+function getLevel() {
+  return parseInt(document.getElementById("level").value);
 }
 
-// Generate random number based on level
 function generateNumber(level) {
-  let min = 1, max = 9;
-  if (level === 2) max = 30;
-  if (level === 3) max = 99;
-  if (level === 4) max = 199;
+  const ranges = {
+    1: [1, 9],
+    2: [10, 99],
+    3: [10, 99],
+    4: [100, 999]
+  };
+  const [min, max] = ranges[level];
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Generate a new math operation
 function generateOperation() {
-  let op, num1, num2, displayOp, result;
-  let valid = false;
+  if (operationQueue.length === 0) {
+    operationQueue = [...operatorsPerCycle];
+  }
+
+  let operator;
+  let op;
   let attempts = 0;
-  const maxAttempts = 100;
 
-  // Try to generate a valid operation
-  while (!valid && attempts < maxAttempts) {
-      attempts++;
-      op = operationOrder[cycleIndex % operationOrder.length];
-      cycleIndex++;
+  do {
+    operator = operationQueue.shift();
+    let num1 = generateNumber(getLevel());
+    let num2 = generateNumber(getLevel());
 
-      num1 = generateNumber(level);
-      num2 = generateNumber(level);
+    if (operator === '-') {
+      [num1, num2] = num1 < num2 ? [num2, num1] : [num1, num2];
+    }
 
-      // Calculate result based on operation type
-      if (op === "+") {
-          result = num1 + num2;
-          valid = true;
-      } else if (op === "-") {
-          // Ensure positive results
-          if (num1 < num2) [num1, num2] = [num2, num1];
-          result = num1 - num2;
-          valid = true;
-      } else if (op === "*") {
-          // Skip trivial multiplications
-          if (num1 !== 1 && num2 !== 1 && num1 !== 11 && num2 !== 11) {
-              result = num1 * num2;
-              valid = true;
-          }
-      } else if (op === "/") {
-          // Skip exact divisions and division by zero
-          if (num2 !== 0 && num1 % num2 !== 0) {
-              result = parseFloat((num1 / num2).toFixed(2));
-              valid = true;
-          }
-      }
-
-      // Check if operation is unique in recent history
-      if (valid) {
-          displayOp = `${num1} ${op} ${num2}`;
-          if (history.includes(displayOp)) {
-              valid = false;
-          }
-      }
-  }
-
-  // Fallback if no valid operation found
-  if (!valid) {
-      console.error("Failed to generate valid operation after", maxAttempts, "attempts");
-      // Generate a simple addition as fallback
-      num1 = generateNumber(1);
-      num2 = generateNumber(1);
-      displayOp = `${num1} + ${num2}`;
-      result = num1 + num2;
-  }
-
-  // Update game state
-  currentOperation = displayOp;
-  currentAnswer = result;
-  history.push(displayOp);
-  
-  // Limit history size
-  if (history.length > 30) {
-      history.shift();
-  }
-
-  // Update UI
-  document.getElementById("operation").innerText = displayOp;
-  document.getElementById("answer").value = "";
-  document.getElementById("answer").focus();
-}
-
-// Check user's answer
-function checkAnswer() {
-  const userAnswer = parseFloat(document.getElementById("answer").value.trim());
-  const feedback = document.getElementById("feedback");
-
-  if (!isNaN(userAnswer) {
-      if (Math.abs(userAnswer - currentAnswer) < 0.01) { // Account for floating point precision
-          score++;
-          feedback.innerText = "✅ ¡Correcto!";
-          feedback.style.color = "lightgreen";
+    if (operator === '/') {
+      num2 = Math.max(1, num2); // evitar 0
+      if (getLevel() === 3) {
+        correctAnswer = parseFloat((num1 / num2).toFixed(2));
       } else {
-          feedback.innerText = `❌ Incorrecto. Era ${currentAnswer}`;
-          feedback.style.color = "red";
+        num1 = num1 * num2;
+        correctAnswer = num1 / num2;
       }
+    } else {
+      correctAnswer = eval(`${num1} ${operator} ${num2}`);
+    }
+
+    op = `${num1} ${operator} ${num2}`;
+    attempts++;
+    if (attempts > 50) break; // evita bucles infinitos
+
+  } while (
+    history.includes(op) ||
+    isTrivial(op, operator) ||
+    correctAnswer < 0
+  );
+
+  history.push(op);
+  if (history.length > maxHistory) history.shift();
+
+  currentOperation = op;
+  document.getElementById("operation").textContent = op;
+}
+
+function isTrivial(op, operator) {
+  return (
+    op.includes(' * 1') ||
+    op.includes(' + 0') ||
+    op.includes(' - 0') ||
+    op.includes(' / 1') ||
+    op.includes(' * 11') ||
+    op.includes(' / 11') ||
+    op.includes(' + 11') ||
+    op.includes(' - 11')
+  );
+}
+
+function checkAnswer() {
+  const input = document.getElementById("answer");
+  let userAnswer = input.value.trim().replace(",", ".");
+
+  if (userAnswer === "") return;
+
+  let userValue = parseFloat(userAnswer);
+  let isCorrect = Math.abs(userValue - correctAnswer) < 0.01;
+
+  const feedback = document.getElementById("feedback");
+  if (isCorrect) {
+    feedback.textContent = "✅ Correcto";
+    score++;
   } else {
-      feedback.innerText = "⚠️ Ingresa un número válido";
-      feedback.style.color = "yellow";
-      return;
+    feedback.textContent = `❌ Incorrecto. Era ${correctAnswer}`;
   }
 
-  // Update score
-  document.getElementById("score").innerText = "Puntos: " + score;
+  document.getElementById("score").textContent = score;
+  input.value = "";
 
-  // Show completion message after 30 questions
-  if (history.length >= 30) {
-      feedback.innerText += " ¡30 operaciones completadas!";
-  }
-
-  // Generate new question after delay
-  setTimeout(() => {
-      feedback.innerText = "";
+  operationCount++;
+  if (operationCount >= 30) {
+    setTimeout(() => {
+      if (confirm("¿Deseas subir de nivel o repetir?")) {
+        let level = getLevel();
+        if (level < 4) {
+          document.getElementById("level").value = level + 1;
+        }
+      }
+      score = 0;
+      operationCount = 0;
+      history = [];
+      document.getElementById("score").textContent = score;
       generateOperation();
-  }, (history.length >= 30) ? 3000 : 1500);
-}
-
-// Handle keyboard input
-function handleKey(event) {
-  if (event.key === "Enter") {
-      checkAnswer();
+    }, 200);
+  } else {
+    setTimeout(generateOperation, isCorrect ? 500 : 1500);
   }
 }
 
-// Start the game when page loads
-window.onload = function() {
-  resetGame();
-  document.getElementById("answer").focus();
-};
+function resetGame() {
+  score = 0;
+  operationCount = 0;
+  history = [];
+  operationQueue = [];
+  document.getElementById("score").textContent = score;
+  document.getElementById("feedback").textContent = "";
+  generateOperation();
+}
+
+resetGame();
+
