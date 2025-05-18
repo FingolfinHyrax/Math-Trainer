@@ -1,108 +1,116 @@
+const operationDisplay = document.getElementById("operation");
+const answerInput = document.getElementById("answer");
+const checkButton = document.getElementById("check");
+const scoreDisplay = document.getElementById("score");
+const levelSelector = document.getElementById("level");
+
+let currentAnswer;
 let score = 0;
-let currentProblem = {};
-let lastOperations = [];
-let operationsDone = 0;
+let level = parseInt(levelSelector.value);
+let history = [];
 
-document.addEventListener("DOMContentLoaded", () => {
-    generateProblem();
-    document.getElementById("answer").focus();
-});
+const OP_COUNTS = {
+    1: { "+": 3, "-": 3, "*": 3, "/": 2 },
+    2: { "+": 3, "-": 3, "*": 3, "/": 3 },
+    3: { "+": 3, "-": 3, "*": 3, "/": 3 }
+};
 
-document.getElementById("level").addEventListener("change", () => {
-    score = 0;
-    operationsDone = 0;
-    lastOperations = [];
-    updateScore();
-    generateProblem();
-});
+function generateOperation(level) {
+    const counts = OP_COUNTS[level];
+    const ops = Object.entries(counts).flatMap(([op, count]) => Array(count).fill(op));
+    const op = ops[Math.floor(Math.random() * ops.length)];
+    let a, b, result;
 
-document.getElementById("answer").addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-        checkAnswer();
+    while (true) {
+        if (level === 1) {
+            a = getRandomInt(2, 10);
+            b = getRandomInt(2, 10);
+        } else if (level === 2) {
+            a = getRandomInt(10, 99);
+            b = getRandomInt(2, 10);
+        } else {
+            a = getRandomInt(10, 99);
+            b = getRandomInt(10, 99);
+        }
+
+        switch (op) {
+            case "+":
+                result = a + b;
+                break;
+            case "-":
+                if (a < b) [a, b] = [b, a]; // evita negativos
+                result = a - b;
+                break;
+            case "*":
+                result = a * b;
+                break;
+            case "/":
+                result = a / b;
+                if (level === 1 || level === 2) {
+                    if (!Number.isInteger(result)) continue; // solo divisiones exactas
+                } else {
+                    result = parseFloat(result.toFixed(2)); // hasta 2 decimales
+                }
+                break;
+        }
+
+        const key = `${a} ${op} ${b}`;
+        if (result < 0 || isTrivial(a, b, op) || history.includes(key)) continue;
+
+        history.push(key);
+        if (history.length > 100) history.shift(); // evita crecer demasiado
+        return { a, b, op, result };
     }
-});
-
-function updateScore() {
-    document.getElementById("score").textContent = `Puntos: ${score}`;
 }
 
-function generateProblem() {
-    const level = parseInt(document.getElementById("level").value);
-    let num1, num2, operator, question, answer;
-    const operations = ["+", "-", "*", "/"];
-    let availableOps = [...operations];
+function isTrivial(a, b, op) {
+    if (a === b && (op === "-" || op === "/")) return true;
+    if ((b === 1 || b === 0) && (op === "*" || op === "/")) return true;
+    return false;
+}
 
-    if (level === 4) availableOps = ["+", "-", "*"]; // sin divisiones en nivel 4
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-    do {
-        operator = availableOps[Math.floor(Math.random() * availableOps.length)];
-
-        if (level === 1) {
-            num1 = Math.floor(Math.random() * 9) + 1;
-            num2 = Math.floor(Math.random() * 9) + 1;
-        } else if (level === 2 || level === 3) {
-            num1 = Math.floor(Math.random() * 90) + 10;
-            num2 = Math.floor(Math.random() * 90) + 10;
-        } else if (level === 4) {
-            num1 = Math.floor(Math.random() * 9000) + 1000;
-            num2 = Math.floor(Math.random() * 90) + 10;
-        }
-
-        if (operator === "/") {
-            if (level === 1 || level === 2) {
-                // resultado exacto sin decimales
-                num2 = Math.floor(Math.random() * 9) + 1;
-                num1 = num2 * (Math.floor(Math.random() * 10) + 1);
-                answer = num1 / num2;
-            } else {
-                // resultado con hasta 2 decimales
-                num1 = Math.floor(Math.random() * 90) + 10;
-                num2 = Math.floor(Math.random() * 9) + 1;
-                answer = parseFloat((num1 / num2).toFixed(2));
-            }
-        } else {
-            answer = eval(`${num1} ${operator} ${num2}`);
-        }
-
-        question = `${num1} ${operator} ${num2}`;
-    } while (
-        lastOperations.includes(question) ||
-        (level === 1 && operator === "/" && !Number.isInteger(answer))
-    );
-
-    currentProblem = { question, answer };
-    lastOperations.push(question);
-    if (lastOperations.length > 30) lastOperations.shift();
-
-    document.getElementById("problem").textContent = question;
-    document.getElementById("answer").value = "";
-    document.getElementById("answer").focus();
+function setNewOperation() {
+    level = parseInt(levelSelector.value);
+    const { a, b, op, result } = generateOperation(level);
+    currentAnswer = result;
+    operationDisplay.textContent = `${a} ${op} ${b}`;
+    answerInput.value = "";
+    answerInput.focus();
 }
 
 function checkAnswer() {
-    const userAnswer = parseFloat(document.getElementById("answer").value.trim());
-    if (isNaN(userAnswer)) return;
-
-    const correctAnswer = parseFloat(currentProblem.answer);
-    const level = parseInt(document.getElementById("level").value);
-    const tolerance = level === 3 ? 0.01 : 0;
-
-    if (Math.abs(userAnswer - correctAnswer) <= tolerance) {
+    const userAnswer = parseFloat(answerInput.value.replace(",", "."));
+    if (Math.abs(userAnswer - currentAnswer) < 0.01) {
         score++;
-        operationsDone++;
-        updateScore();
-        if (score % 20 === 0) {
-            if (confirm("¡Buen trabajo! ¿Quieres subir de nivel?")) {
-                const newLevel = Math.min(level + 1, 4);
-                document.getElementById("level").value = newLevel;
-            }
+        scoreDisplay.textContent = `Puntos: ${score}`;
+        if ((level === 1 || level === 2) && score === 24) {
+            alert("¡Buen trabajo! Puedes subir al siguiente nivel si lo deseas.");
             score = 0;
-            lastOperations = [];
-            operationsDone = 0;
-            updateScore();
+            history = [];
+        } else if (level === 3 && score === 24) {
+            alert("¡Objetivo del día cumplido! Puedes seguir o dejarlo por hoy.");
+            score = 0;
+            history = [];
         }
     }
-
-    generateProblem();
+    setNewOperation();
 }
+
+checkButton.addEventListener("click", checkAnswer);
+answerInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") checkAnswer();
+});
+levelSelector.addEventListener("change", () => {
+    score = 0;
+    history = [];
+    scoreDisplay.textContent = "Puntos: 0";
+    setNewOperation();
+});
+
+setNewOperation();
+
 
