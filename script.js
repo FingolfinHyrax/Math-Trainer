@@ -4,146 +4,160 @@ const checkButton = document.getElementById("check");
 const scoreElement = document.getElementById("score");
 const levelSelect = document.getElementById("level");
 
+let currentOperation = "";
+let correctAnswer = 0;
 let score = 0;
-let currentAnswer = 0;
-let operationHistory = new Set();
+let history = [];
+const maxHistory = 20;
+
+function generateUniqueOperation(level) {
+  const operations = [];
+
+  const add = () => {
+    let a, b;
+    if (level === "1") {
+      a = getRandomInt(1, 9);
+      b = getRandomInt(1, 9);
+    } else if (level === "2") {
+      a = getRandomInt(10, 99);
+      b = getRandomInt(1, 9);
+    } else {
+      a = getRandomInt(10, 99);
+      b = getRandomInt(10, 99);
+    }
+    return `${a}+${b}`;
+  };
+
+  const subtract = () => {
+    let a, b;
+    if (level === "1") {
+      a = getRandomInt(1, 9);
+      b = getRandomInt(1, a);
+    } else if (level === "2") {
+      b = getRandomInt(1, 9);
+      a = getRandomInt(b + 1, 99);
+    } else {
+      b = getRandomInt(10, 99);
+      a = getRandomInt(b + 1, 99);
+    }
+    return `${a}-${b}`;
+  };
+
+  const multiply = () => {
+    let a, b;
+    if (level === "1") {
+      a = getRandomInt(1, 9);
+      b = getRandomInt(1, 9);
+    } else if (level === "2") {
+      a = getRandomInt(10, 99);
+      b = getRandomInt(1, 9);
+    } else {
+      a = getRandomInt(10, 99);
+      b = getRandomInt(10, 99);
+    }
+    return `${a}*${b}`;
+  };
+
+  const divide = () => {
+    let a, b, result;
+    do {
+      if (level === "1") {
+        b = getRandomInt(2, 9);
+        result = getRandomInt(1, 9);
+        a = b * result;
+      } else if (level === "2") {
+        b = getRandomInt(2, 9);
+        result = getRandomInt(1, 9);
+        a = b * result;
+      } else {
+        b = getRandomInt(2, 99);
+        result = getRandomFloat(1, 99, 2);
+        a = parseFloat((b * result).toFixed(2));
+      }
+    } while (!isFinite(a) || !isFinite(b));
+    return `${a}/${b}`;
+  };
+
+  operations.push(add, subtract, multiply, divide);
+
+  let op;
+  do {
+    const opFunc = operations[Math.floor(Math.random() * operations.length)];
+    op = opFunc();
+  } while (history.includes(op) || isTrivial(op));
+
+  history.push(op);
+  if (history.length > maxHistory) {
+    history.shift();
+  }
+
+  return op;
+}
 
 function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function getRandomFloat(min, max, decimals = 2) {
-    const factor = Math.pow(10, decimals);
-    return Math.round((Math.random() * (max - min) + min) * factor) / factor;
+function getRandomFloat(min, max, decimals) {
+  const factor = Math.pow(10, decimals);
+  return Math.floor(Math.random() * (max * factor - min * factor + 1) + min * factor) / factor;
 }
 
-function generateUniqueOperation(generatorFn) {
-    let op;
-    let attempts = 0;
-    do {
-        op = generatorFn();
-        attempts++;
-    } while (operationHistory.has(op.text) && attempts < 100);
-    operationHistory.add(op.text);
-    return op;
+function isTrivial(operation) {
+  return (
+    operation.includes("/1") ||
+    operation.includes("-0") ||
+    operation.includes("*1") ||
+    operation.includes("+0") ||
+    /^(\d+)[-+*/]\1$/.test(operation)
+  );
 }
 
-function generateOperation(level) {
-    const operations = [];
-    const usedTexts = new Set();
+function generateNewOperation() {
+  const level = levelSelect.value;
+  currentOperation = generateUniqueOperation(level);
+  correctAnswer = eval(currentOperation);
+  if (level === "2") correctAnswer = Math.floor(correctAnswer); // no decimales
+  if (level === "1") correctAnswer = Math.floor(correctAnswer); // asegurar enteros
+  correctAnswer = parseFloat(correctAnswer.toFixed(2));
+  operationElement.textContent = currentOperation.replace("*", "×").replace("/", "÷");
+  answerInput.value = "";
+  answerInput.focus();
+}
 
-    const addOperation = (fn) => {
-        const { text, answer } = generateUniqueOperation(fn);
-        if (!usedTexts.has(text)) {
-            operations.push({ text, answer });
-            usedTexts.add(text);
-        }
-    };
-
-    switch (level) {
-        case "1":
-            addOperation(() => {
-                let a = getRandomInt(2, 9), b = getRandomInt(2, 9);
-                return { text: `${a}+${b}`, answer: a + b };
-            });
-            addOperation(() => {
-                let a = getRandomInt(2, 9), b = getRandomInt(2, 9);
-                return { text: `${a}-${b}`, answer: a - b };
-            });
-            addOperation(() => {
-                let a = getRandomInt(2, 9), b = getRandomInt(2, 9);
-                return { text: `${a}*${b}`, answer: a * b };
-            });
-            addOperation(() => {
-                let b = getRandomInt(2, 9), a = b * getRandomInt(1, 9);
-                return { text: `${a}/${b}`, answer: a / b };
-            });
-            break;
-
-        case "2":
-            addOperation(() => {
-                let a = getRandomInt(10, 99), b = getRandomInt(1, 9);
-                return { text: `${a}+${b}`, answer: a + b };
-            });
-            addOperation(() => {
-                let a = getRandomInt(10, 99), b = getRandomInt(1, 9);
-                return { text: `${a}-${b}`, answer: a - b };
-            });
-            addOperation(() => {
-                let a = getRandomInt(10, 99), b = getRandomInt(2, 9);
-                return { text: `${a}*${b}`, answer: a * b };
-            });
-            addOperation(() => {
-                let b = getRandomInt(2, 9), result = getRandomInt(1, 9), a = b * result;
-                return { text: `${a}/${b}`, answer: result };
-            });
-            break;
-
-        case "3":
-            addOperation(() => {
-                let a = getRandomInt(10, 99), b = getRandomInt(10, 99);
-                return { text: `${a}+${b}`, answer: a + b };
-            });
-            addOperation(() => {
-                let a = getRandomInt(10, 99), b = getRandomInt(1, a - 1);
-                return { text: `${a}-${b}`, answer: a - b };
-            });
-            addOperation(() => {
-                let a = getRandomInt(10, 99), b = getRandomInt(2, 9);
-                return { text: `${a}*${b}`, answer: a * b };
-            });
-            addOperation(() => {
-                let a = getRandomInt(10, 99), b = getRandomInt(2, 9);
-                return { text: `${a}/${b}`, answer: Math.round((a / b) * 100) / 100 };
-            });
-            break;
+function checkAnswer() {
+  const userAnswer = parseFloat(answerInput.value);
+  if (userAnswer === correctAnswer) {
+    score++;
+    if (score === 24 && levelSelect.value === "3") {
+      alert("¡Muy bien! Has alcanzado tu objetivo del día. Puedes seguir o dejarlo aquí.");
+      score = 0;
+      history = [];
+    } else if (score === 24) {
+      alert("¡Buen trabajo! Te sugerimos subir al siguiente nivel.");
+      score = 0;
+      history = [];
     }
-
-    return operations[Math.floor(Math.random() * operations.length)];
+  }
+  scoreElement.textContent = `Puntos: ${score}`;
+  generateNewOperation();
 }
 
-function loadNewOperation() {
-    const level = levelSelect.value;
-    const op = generateOperation(level);
-    operationElement.textContent = op.text;
-    currentAnswer = op.answer;
-    answerInput.value = "";
-    answerInput.focus();
-}
-
-checkButton.addEventListener("click", () => {
-    const userAnswer = parseFloat(answerInput.value.trim());
-    if (!isNaN(userAnswer) && Math.abs(userAnswer - currentAnswer) < 0.01) {
-        score++;
-        if ((levelSelect.value === "1" && score >= 20) || score >= 24) {
-            setTimeout(() => {
-                if (levelSelect.value === "3") {
-                    alert("¡Objetivo del día cumplido! Puedes continuar o dejarlo para mañana.");
-                } else {
-                    alert("¡Bien hecho! Puedes subir al siguiente nivel.");
-                }
-                score = 0;
-                operationHistory.clear();
-            }, 100);
-        }
-    }
-    scoreElement.textContent = `Puntos: ${score}`;
-    loadNewOperation();
+// Eventos
+checkButton.addEventListener("click", checkAnswer);
+answerInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") checkAnswer();
+});
+levelSelect.addEventListener("change", function () {
+  score = 0;
+  history = [];
+  scoreElement.textContent = `Puntos: ${score}`;
+  generateNewOperation();
 });
 
-answerInput.addEventListener("keyup", (e) => {
-    if (e.key === "Enter") checkButton.click();
-});
+// Inicialización
+generateNewOperation();
 
-levelSelect.addEventListener("change", () => {
-    score = 0;
-    scoreElement.textContent = "Puntos: 0";
-    operationHistory.clear();
-    loadNewOperation();
-});
-
-// Inicializar
-loadNewOperation();
 
 
 
