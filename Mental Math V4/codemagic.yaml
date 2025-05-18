@@ -1,0 +1,18 @@
+workflows:
+  ios-webview-app:
+    name: Mental Trainer iOS App
+    environment:
+      vars:
+        BUNDLE_ID: "com.tuusuario.mentaltrainer"
+        APP_NAME: "Entrenador Mental"
+        APP_VERSION: "1.0.0"
+    scripts:
+      - name: Crear proyecto iOS con WebView
+        script: |
+          git clone https://github.com/codemagic-ci-cd/webview-ios.git
+          cd webview-ios
+          rm -rf WebViewApp/www/*
+          cp -R ../* WebViewApp/www/
+          xcodebuild -project WebViewApp/WebViewApp.xcodeproj -scheme WebViewApp -sdk iphoneos -configuration Release archive -archivePath $CM_BUILD_DIR/build/WebViewApp.xcarchive
+    artifacts:
+      - build/WebViewApp.xcarchive
