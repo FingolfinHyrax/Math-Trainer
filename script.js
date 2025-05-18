@@ -1,91 +1,108 @@
-
 let score = 0;
-let currentAnswer;
-let history = [];
-let operationCount = 0;
-let operatorCycle = [];
-const operatorsSequence = ['+', '+', '+', '-', '-', '-', '*', '*', '*', '/', '/'];
+let currentProblem = {};
+let lastOperations = [];
+let operationsDone = 0;
 
-function resetGame() {
+document.addEventListener("DOMContentLoaded", () => {
+    generateProblem();
+    document.getElementById("answer").focus();
+});
+
+document.getElementById("level").addEventListener("change", () => {
     score = 0;
-    history = [];
-    operationCount = 0;
-    operatorCycle = [...operatorsSequence];
-    document.getElementById('score').textContent = score;
-    document.getElementById('feedback').textContent = '';
-    document.getElementById('answer').value = '';
-    generateOperation();
-}
+    operationsDone = 0;
+    lastOperations = [];
+    updateScore();
+    generateProblem();
+});
 
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function generateOperation() {
-    const level = parseInt(document.getElementById('level').value);
-    let num1, num2, operator, result, operation;
-
-    if (operatorCycle.length === 0) {
-        operatorCycle = [...operatorsSequence];
-        operationCount = 0;
-        history = [];
-        setTimeout(() => {
-            alert('¡Buen trabajo! ¿Quieres subir de nivel o seguir practicando este nivel?');
-        }, 100);
+document.getElementById("answer").addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        checkAnswer();
     }
+});
+
+function updateScore() {
+    document.getElementById("score").textContent = `Puntos: ${score}`;
+}
+
+function generateProblem() {
+    const level = parseInt(document.getElementById("level").value);
+    let num1, num2, operator, question, answer;
+    const operations = ["+", "-", "*", "/"];
+    let availableOps = [...operations];
+
+    if (level === 4) availableOps = ["+", "-", "*"]; // sin divisiones en nivel 4
 
     do {
-        operator = operatorCycle.shift();
-        switch (level) {
-            case 1:
-                num1 = getRandomInt(1, 9);
-                num2 = getRandomInt(1, 9);
-                break;
-            case 2:
-                num1 = getRandomInt(10, 99);
-                num2 = getRandomInt(1, 99);
-                break;
-            case 3:
-                num1 = getRandomInt(10, 99);
-                num2 = getRandomInt(1, 20);
-                break;
-            case 4:
-                num1 = getRandomInt(100, 9999);
-                num2 = getRandomInt(1, 999);
-                break;
+        operator = availableOps[Math.floor(Math.random() * availableOps.length)];
+
+        if (level === 1) {
+            num1 = Math.floor(Math.random() * 9) + 1;
+            num2 = Math.floor(Math.random() * 9) + 1;
+        } else if (level === 2 || level === 3) {
+            num1 = Math.floor(Math.random() * 90) + 10;
+            num2 = Math.floor(Math.random() * 90) + 10;
+        } else if (level === 4) {
+            num1 = Math.floor(Math.random() * 9000) + 1000;
+            num2 = Math.floor(Math.random() * 90) + 10;
         }
 
-        if (operator === '+') result = num1 + num2;
-        else if (operator === '-') result = num1 - num2;
-        else if (operator === '*') result = num1 * num2;
-        else if (operator === '/') {
-            result = num1 / num2;
-            if (level === 3) result = parseFloat(result.toFixed(2));
+        if (operator === "/") {
+            if (level === 1 || level === 2) {
+                // resultado exacto sin decimales
+                num2 = Math.floor(Math.random() * 9) + 1;
+                num1 = num2 * (Math.floor(Math.random() * 10) + 1);
+                answer = num1 / num2;
+            } else {
+                // resultado con hasta 2 decimales
+                num1 = Math.floor(Math.random() * 90) + 10;
+                num2 = Math.floor(Math.random() * 9) + 1;
+                answer = parseFloat((num1 / num2).toFixed(2));
+            }
+        } else {
+            answer = eval(`${num1} ${operator} ${num2}`);
         }
 
-        operation = `${num1} ${operator} ${num2}`;
-    } while (history.includes(operation) || (operator === '/' && num2 === 1) || (operator === '*' && num2 === 1));
+        question = `${num1} ${operator} ${num2}`;
+    } while (
+        lastOperations.includes(question) ||
+        (level === 1 && operator === "/" && !Number.isInteger(answer))
+    );
 
-    history.push(operation);
-    if (history.length > 30) history.shift();
-    currentAnswer = result;
-    document.getElementById('operation').textContent = operation;
+    currentProblem = { question, answer };
+    lastOperations.push(question);
+    if (lastOperations.length > 30) lastOperations.shift();
+
+    document.getElementById("problem").textContent = question;
+    document.getElementById("answer").value = "";
+    document.getElementById("answer").focus();
 }
 
 function checkAnswer() {
-    const userAnswer = parseFloat(document.getElementById('answer').value);
-    if (Math.abs(userAnswer - currentAnswer) < 0.01) {
+    const userAnswer = parseFloat(document.getElementById("answer").value.trim());
+    if (isNaN(userAnswer)) return;
+
+    const correctAnswer = parseFloat(currentProblem.answer);
+    const level = parseInt(document.getElementById("level").value);
+    const tolerance = level === 3 ? 0.01 : 0;
+
+    if (Math.abs(userAnswer - correctAnswer) <= tolerance) {
         score++;
-        document.getElementById('feedback').textContent = 'Correcto';
-    } else {
-        document.getElementById('feedback').textContent = `Incorrecto. Era ${currentAnswer}`;
+        operationsDone++;
+        updateScore();
+        if (score % 20 === 0) {
+            if (confirm("¡Buen trabajo! ¿Quieres subir de nivel?")) {
+                const newLevel = Math.min(level + 1, 4);
+                document.getElementById("level").value = newLevel;
+            }
+            score = 0;
+            lastOperations = [];
+            operationsDone = 0;
+            updateScore();
+        }
     }
-    document.getElementById('score').textContent = score;
-    document.getElementById('answer').value = '';
-    setTimeout(() => {
-        document.getElementById('feedback').textContent = '';
-        generateOperation();
-    }, 1500);
+
+    generateProblem();
 }
 
-window.onload = resetGame;
