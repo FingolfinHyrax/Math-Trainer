@@ -127,8 +127,15 @@ function generateNewOperation() {
 
 function checkAnswer() {
   const userAnswer = parseFloat(answerInput.value);
-  if (userAnswer === correctAnswer) {
-    score++;
+  const mensaje = document.getElementById("mensaje");
+
+if (respuestaUsuario === respuestaCorrecta) {
+  puntos++;
+  mensaje.textContent = ""; // limpia mensaje
+} else {
+  mensaje.textContent = "Incorrecto, intenta de nuevo.";
+}
+
     if (score === 24 && levelSelect.value === "3") {
       alert("¡Muy bien! Has alcanzado tu objetivo del día. Puedes seguir o dejarlo aquí.");
       score = 0;
