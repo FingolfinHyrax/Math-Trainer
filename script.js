@@ -129,25 +129,27 @@ function checkAnswer() {
   const userAnswer = parseFloat(answerInput.value);
   const mensaje = document.getElementById("mensaje");
 
-if (respuestaUsuario === respuestaCorrecta) {
-  puntos++;
-  mensaje.textContent = ""; // limpia mensaje
-} else {
-  mensaje.textContent = "Incorrecto, intenta de nuevo.";
-}
+  if (userAnswer === respuestaCorrecta) {
+    puntos++;
+    mensaje.textContent = ""; // limpia mensaje
 
-    if (score === 24 && levelSelect.value === "3") {
+    // Verificar si se alcanzaron los 24 puntos
+    if (puntos === 24 && levelSelect.value === "3") {
       alert("¡Muy bien! Has alcanzado tu objetivo del día. Puedes seguir o dejarlo aquí.");
-      score = 0;
+      puntos = 0;
       history = [];
-    } else if (score === 24) {
+    } else if (puntos === 24) {
       alert("¡Buen trabajo! Te sugerimos subir al siguiente nivel.");
-      score = 0;
+      puntos = 0;
       history = [];
     }
+
+    generateOperation(); // genera nueva operación solo si fue correcta
+  } else {
+    mensaje.textContent = "Incorrecto, intenta de nuevo.";
   }
-  scoreElement.textContent = `Puntos: ${score}`;
-  generateNewOperation();
+
+  answerInput.value = "";
 }
 
 // Eventos
