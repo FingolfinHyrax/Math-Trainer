@@ -72,6 +72,12 @@ button {
 button:hover {
   background-color: #45a049;
 }
+#mensaje {
+  color: #ff4c4c; /* rojo */
+  margin-top: 10px;
+  font-weight: bold;
+  text-align: center;
+}
 
 #score {
   margin-top: 20px;
