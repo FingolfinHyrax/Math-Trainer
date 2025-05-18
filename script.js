@@ -61,11 +61,7 @@ function generateUniqueOperation(level) {
   const divide = () => {
     let a, b, result;
     do {
-      if (level === "1") {
-        b = getRandomInt(2, 9);
-        result = getRandomInt(1, 9);
-        a = b * result;
-      } else if (level === "2") {
+      if (level === "1" || level === "2") {
         b = getRandomInt(2, 9);
         result = getRandomInt(1, 9);
         a = b * result;
@@ -117,8 +113,7 @@ function generateNewOperation() {
   const level = levelSelect.value;
   currentOperation = generateUniqueOperation(level);
   correctAnswer = eval(currentOperation);
-  if (level === "2") correctAnswer = Math.floor(correctAnswer); // no decimales
-  if (level === "1") correctAnswer = Math.floor(correctAnswer); // asegurar enteros
+  if (level === "2" || level === "1") correctAnswer = Math.floor(correctAnswer);
   correctAnswer = parseFloat(correctAnswer.toFixed(2));
   operationElement.textContent = currentOperation.replace("*", "×").replace("/", "÷");
   answerInput.value = "";
@@ -129,26 +124,26 @@ function checkAnswer() {
   const userAnswer = parseFloat(answerInput.value);
   const mensaje = document.getElementById("mensaje");
 
-  if (userAnswer === respuestaCorrecta) {
-    puntos++;
-    mensaje.textContent = ""; // limpia mensaje
+  if (userAnswer === correctAnswer) {
+    score++;
+    mensaje.textContent = "";
 
-    // Verificar si se alcanzaron los 24 puntos
-    if (puntos === 24 && levelSelect.value === "3") {
+    if (score === 24 && levelSelect.value === "3") {
       alert("¡Muy bien! Has alcanzado tu objetivo del día. Puedes seguir o dejarlo aquí.");
-      puntos = 0;
+      score = 0;
       history = [];
-    } else if (puntos === 24) {
+    } else if (score === 24) {
       alert("¡Buen trabajo! Te sugerimos subir al siguiente nivel.");
-      puntos = 0;
+      score = 0;
       history = [];
     }
 
-    generateOperation(); // genera nueva operación solo si fue correcta
+    generateNewOperation();
   } else {
     mensaje.textContent = "Incorrecto, intenta de nuevo.";
   }
 
+  scoreElement.textContent = `Puntos: ${score}`;
   answerInput.value = "";
 }
 
@@ -166,7 +161,4 @@ levelSelect.addEventListener("change", function () {
 
 // Inicialización
 generateNewOperation();
-
-
-
 
